@@ -8,7 +8,7 @@ normalization_map = {}
 scale = ''
 octave_token = '\''
 scale_length = 7  # Length of the musical scale
-
+shortLoop = False
 def generate_scale_constants(scale):
     middle_octave = scale  # CAPS string, e.g., 'SGMDN'
     lower_octave = scale.lower()  # Convert to lower case for lower octave
@@ -91,9 +91,13 @@ def generate_patterns(seed, ascending=True):
     while True:
         patterns.append(current_pattern)  # Append the current pattern array of tokens
         next_pattern = [next_token(token) if ascending else previous_token(token) for token in current_pattern]
-        if comparePattern(''.join(next_pattern), ''.join(original_pattern)):
-            patterns.append(next_pattern)
-            break
+        if shortLoop:
+            if normalization_map[current_pattern[len(next_pattern)-1]] == 'S':
+                break
+        else:
+            if comparePattern(''.join(next_pattern), ''.join(original_pattern)):
+                patterns.append(next_pattern)
+                break
         current_pattern = next_pattern
     return patterns
 
@@ -105,7 +109,7 @@ def is_valid_pattern(pattern, scale):
     # Create a set of unique notes from the scale to speed up membership testing
     valid_notes = set(scale)
     # Tokenize the pattern to handle notes correctly
-    pattern_tokens = tokenize_pattern(pattern)
+    pattern_tokens = tokenize_pattern(normalize_pattern(pattern))
     
     # Check each token in the pattern; it must be in valid_notes or be a space
     return all(token in valid_notes or token == ' ' for token in pattern_tokens)
@@ -134,6 +138,7 @@ def setup_arg_parser():
     parser = ArgumentParserWithCustomError(description="Generate Alankars for given Raag scale.")
     parser.add_argument("pattern", type=str, help="The seed pattern of the alankar, e.g., 'SGMDN'")
     parser.add_argument("-s", "--scale", type=str, default="SMGDN", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS\''")
+    parser.add_argument("-l", "--shortloop", type=bool, default=True, help="Loop can be short (ending with S), or long(finishing an octave)")
     return parser
     
 def main():
@@ -143,12 +148,14 @@ def main():
     global normalization_map
     global scale_length 
     global scale 
+    global shortLoop
     scale = clean_scale(args.scale)
+    shortLoop = args.shortloop
     # Generate scale constants based on input or default
     tokens, normalization_map, scale_length = generate_scale_constants(scale)
     # Validate the pattern against the processed scale
     if not is_valid_pattern(args.pattern, scale):
-        print("The pattern you have suggested, contains notes (Sur) which are not present in the given scale")
+        print("The pattern you have suggested, contains notes (Sur) which are not present in the given scale\n"+str(scale))
         return
     # Generate patterns
     for pattern in generate_patterns(args.pattern, ascending=True):
