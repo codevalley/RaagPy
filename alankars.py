@@ -1,9 +1,11 @@
 
 import argparse
+import sys
 
 # Required tokens and normalization mapping for Indian classical music notations
 tokens = []
 normalization_map = {}
+scale = ''
 octave_token = '\''
 scale_length = 7  # Length of the musical scale
 
@@ -98,27 +100,40 @@ def generate_patterns(seed, ascending=True):
 def format_pattern(pattern):
     formatted_tokens = [(token + ' ') if len(token) == 1 and token != ' ' else token for token in pattern]
     return ''.join(formatted_tokens)  # Join 
+
+def is_valid_pattern(pattern, scale):
+    # Create a set of unique notes from the scale to speed up membership testing
+    valid_notes = set(scale)
+    # Tokenize the pattern to handle notes correctly
+    pattern_tokens = tokenize_pattern(pattern)
     
-# Example usage
-#Generate tokens for the raag
-#tokens,normalization_map, scale_length = generate_scale_constants("SGMDN")
+    # Check each token in the pattern; it must be in valid_notes or be a space
+    return all(token in valid_notes or token == ' ' for token in pattern_tokens)
 
-#Alankar seed
-#seed_pattern = "SGMG S"
-#print("Generated Ascending Patterns:")
-#for pattern in generate_patterns(seed_pattern, ascending=True):
-#    print(format_pattern(pattern))  # Uniform spacing
+def clean_scale(scale):
+    # Normal order for Indian music notes, only include recognized characters
+    order = {'S': 1, 'R': 2, 'G': 3, 'M': 4, 'P': 5, 'D': 6, 'N': 7}
+    
+    # Normalize to uppercase and filter out any unexpected characters
+    seen = set()
+    normalized_unique_scale = [char.upper() for char in scale if char.upper() in order.keys() and not (char.upper() in seen or seen.add(char.upper()))]
+    
+    # Sort the scale based on the traditional Indian music order
+    normalized_unique_scale.sort(key=lambda x: order[x])  # Use the order dictionary directly since all characters are expected
 
-#print("\nGenerated Descending Patterns:")
-#for pattern in generate_patterns(seed_pattern, ascending=False):
-#    print(format_pattern(pattern))  # Uniform spacing
+    return ''.join(normalized_unique_scale)
 
 
+class ArgumentParserWithCustomError(argparse.ArgumentParser):
+    def error(self, message):
+        #sys.stderr.write(f'Error: {message}\n')
+        self.print_help()
+        sys.exit(2)
 
 def setup_arg_parser():
-    parser = argparse.ArgumentParser(description="Generate Alankars for given Raag scale.")
+    parser = ArgumentParserWithCustomError(description="Generate Alankars for given Raag scale.")
     parser.add_argument("pattern", type=str, help="The seed pattern of the alankar, e.g., 'SGMDN'")
-    parser.add_argument("-s", "--scale", type=str, default="SRGMPDN", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS\''")
+    parser.add_argument("-s", "--scale", type=str, default="SMGDN", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS\''")
     return parser
     
 def main():
@@ -127,8 +142,14 @@ def main():
     global tokens
     global normalization_map
     global scale_length 
+    global scale 
+    scale = clean_scale(args.scale)
     # Generate scale constants based on input or default
-    tokens, normalization_map, scale_length = generate_scale_constants(args.scale)
+    tokens, normalization_map, scale_length = generate_scale_constants(scale)
+    # Validate the pattern against the processed scale
+    if not is_valid_pattern(args.pattern, scale):
+        print("The pattern you have suggested, contains notes (Sur) which are not present in the given scale")
+        return
     # Generate patterns
     for pattern in generate_patterns(args.pattern, ascending=True):
         print(format_pattern(pattern))
