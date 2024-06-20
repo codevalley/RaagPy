@@ -2,20 +2,15 @@
 import argparse
 
 # Required tokens and normalization mapping for Indian classical music notations
-tokens = ["s", "r", "g", "m", "p", "d", "n", "S", "R", "G", "M", "P", "D", "N", "s_", "r_", "g_", "m_", "p_", "d_", "n_"]
-# mapping notes to their root value
-normalization_map = {
-    's_': 'S', 'r_': 'R', 'g_': 'G', 'm_': 'M', 'p_': 'P', 'd_': 'D', 'n_': 'N',
-    's': 'S', 'r': 'R', 'g': 'G', 'm': 'M', 'p': 'P', 'd': 'D', 'n': 'N',
-    'S': 'S', 'R': 'R', 'G': 'G', 'M': 'M', 'P': 'P', 'D': 'D', 'N': 'N',
-}
-
-scale_length = 7  # default length of the musical scale
+tokens = []
+normalization_map = {}
+octave_token = '\''
+scale_length = 7  # Length of the musical scale
 
 def generate_scale_constants(scale):
     middle_octave = scale  # CAPS string, e.g., 'SGMDN'
     lower_octave = scale.lower()  # Convert to lower case for lower octave
-    upper_octave = [char + '_' for char in lower_octave]  # Append '_' for upper octave
+    upper_octave = [char + octave_token for char in middle_octave]  # Append '_' for upper octave
     tkns = list(lower_octave) + list(middle_octave)+upper_octave
     
     nmap = {}
@@ -82,6 +77,7 @@ def mirror_seed(seed):
             mirrored_seed.append(tokens[new_index])
         else: 
             mirrored_seed.append(token)
+    ''.join(mirrored_seed)
     return ''.join(mirrored_seed)
 
 def generate_patterns(seed, ascending=True):
@@ -102,11 +98,27 @@ def generate_patterns(seed, ascending=True):
 def format_pattern(pattern):
     formatted_tokens = [(token + ' ') if len(token) == 1 and token != ' ' else token for token in pattern]
     return ''.join(formatted_tokens)  # Join 
+    
+# Example usage
+#Generate tokens for the raag
+#tokens,normalization_map, scale_length = generate_scale_constants("SGMDN")
+
+#Alankar seed
+#seed_pattern = "SGMG S"
+#print("Generated Ascending Patterns:")
+#for pattern in generate_patterns(seed_pattern, ascending=True):
+#    print(format_pattern(pattern))  # Uniform spacing
+
+#print("\nGenerated Descending Patterns:")
+#for pattern in generate_patterns(seed_pattern, ascending=False):
+#    print(format_pattern(pattern))  # Uniform spacing
+
+
 
 def setup_arg_parser():
     parser = argparse.ArgumentParser(description="Generate Alankars for given Raag scale.")
     parser.add_argument("pattern", type=str, help="The seed pattern of the alankar, e.g., 'SGMDN'")
-    parser.add_argument("-s", "--scale", type=str, default="SRGMPDNS", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS'")
+    parser.add_argument("-s", "--scale", type=str, default="SRGMPDN", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS\''")
     return parser
     
 def main():
