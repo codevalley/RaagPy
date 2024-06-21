@@ -86,18 +86,19 @@ def generate_patterns(seed, ascending=True):
     seed_to_use = mirror_seed(seed) if not ascending else seed
     original_pattern = tokenize_pattern(seed_to_use)
     current_pattern = original_pattern[:]
+    next_pattern = original_pattern[:]
     patterns = []
     
     while True:
         patterns.append(current_pattern)  # Append the current pattern array of tokens
-        next_pattern = [next_token(token) if ascending else previous_token(token) for token in current_pattern]
         if shortLoop:
-            if normalization_map[current_pattern[len(next_pattern)-1]] == 'S':
+            if normalization_map[current_pattern[len(next_pattern)-1]] == 'S' and next_pattern != original_pattern :
                 break
         else:
             if comparePattern(''.join(next_pattern), ''.join(original_pattern)):
                 patterns.append(next_pattern)
                 break
+        next_pattern = [next_token(token) if ascending else previous_token(token) for token in current_pattern]
         current_pattern = next_pattern
     return patterns
 
@@ -136,8 +137,8 @@ class ArgumentParserWithCustomError(argparse.ArgumentParser):
 
 def setup_arg_parser():
     parser = ArgumentParserWithCustomError(description="Generate Alankars for given Raag scale.")
-    parser.add_argument("pattern", type=str, help="The seed pattern of the alankar, e.g., 'SGMDN'")
-    parser.add_argument("-s", "--scale", type=str, default="SMGDN", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS\''")
+    parser.add_argument("pattern", type=str, help="The seed pattern of the alankar, e.g., 'SRGMPDN")
+    parser.add_argument("-s", "--scale", type=str, default="SRGMPDN", help="Optional scale input in CAPS for middle octave. Default is 'SRGMPDNS\''")
     parser.add_argument("-l", "--shortloop", type=bool, default=True, help="Loop can be short (ending with S), or long(finishing an octave)")
     return parser
     
