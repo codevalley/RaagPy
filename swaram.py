@@ -87,6 +87,8 @@ class Note:
 
     def __hash__(self):
         return hash((self.index,))  # Hash based on the index
+    
+
 class NoteContainer:
     def __init__(self):
         self.notes = {}
@@ -102,12 +104,3 @@ class NoteContainer:
     def __str__(self):
         return ', '.join(str(note) for note in self.notes.values())
 
-
-# Example usage
-note = Note('S')
-transposed_note = note.transpose(2)
-transposed_note2 = transposed_note.transpose(-4)
-
-print("Original Note:", note)  # Output: N
-print("Transposed Note 1:", transposed_note)  # Output: N#
-print("Transposed Note 2:", transposed_note2)  # Output: S
