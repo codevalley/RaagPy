@@ -1,3 +1,4 @@
+from collections import OrderedDict
 class Note:
     ABS_SCALE = 12 #chromatic scale has 12 notes
     SYMBOL = " " #A symbol which is not a note, but can be used as a placeholder
@@ -133,14 +134,12 @@ class Note:
 
 class NoteContainer:
     def __init__(self):
-        self.notes = {}
+        self.notes = OrderedDict()
 
     def add(self, note):
         self.notes[note.index] = note
 
     def __contains__(self, item):
-        if isinstance(item, Note):
-            return item.index in self.notes
         return item in self.notes
 
     def __str__(self):
@@ -148,13 +147,6 @@ class NoteContainer:
 
     def __len__(self):
         return len(self.notes)
-
-    def pop(self):
-        if self.notes:
-            # Return the last item from the ordered dictionary
-            last_key = next(reversed(self.notes))
-            return self.notes[last_key]
-        return None
 
     def normalize(self):
         """Normalizes all notes to octave 0 and returns a new NoteContainer with these normalized notes."""
@@ -164,16 +156,7 @@ class NoteContainer:
             normalized_container.add(normalized_note)
         return normalized_container
     
-    def fetch(self, position):
-        # Check if the position is within bounds
-        if position < 0 or position >= len(self.notes):
-            raise IndexError("Position out of bounds")
-        # Get the item by index in the ordered dictionary
-        key = list(self.notes.keys())[position]
-        return self.notes[key]
-    
     def __iter__(self):
-        """Yield each note in the container."""
         for note in self.notes.values():
             yield note
 
