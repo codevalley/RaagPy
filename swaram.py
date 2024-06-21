@@ -17,9 +17,17 @@ class Note:
         11: (6, 0)  # N natural
     }
     def __init__(self, note, octave=0, semitone=0):
-        if not isinstance(note, str) or note.upper() not in Note.NOTES:
-            raise ValueError("Invalid note, must be one of S, R, G, M, P, D, N")
-        self.base_note = Note.NOTES.index(note.upper())  # Convert note letter to an index
+
+        if isinstance(note,str):
+            if note.upper() in Note.NOTES:
+                self.base_note = Note.NOTES.index(note.upper())  # Convert note letter to an index
+            else:
+                raise ValueError("Invalid note, must be one of S, R, G, M, P, D, N ")
+        elif isinstance(note, int):
+            self.base_note = note % Note.ABS_SCALE
+        else:
+            raise ValueError("Invalid note, must be a one of S, R, G, M, P, D, N  or a number between 0-6")
+        
         self.octave = octave
         self.semitone = semitone  # -1 = flat, 0 = natural, 1 = sharp
         self.index = self.toNumber()
@@ -102,5 +110,84 @@ class NoteContainer:
         return item in self.notes
 
     def __str__(self):
-        return ', '.join(str(note) for note in self.notes.values())
+        return ''.join(str(note) for note in self.notes.values())
 
+    def __len__(self):
+        return len(self.notes)
+
+    def pop(self):
+        if self.notes:
+            # Return the last item from the ordered dictionary
+            last_key = next(reversed(self.notes))
+            return self.notes[last_key]
+        return None
+
+    def normalize(self):
+        """Normalizes all notes to octave 0 and returns a new NoteContainer with these normalized notes."""
+        normalized_container = NoteContainer()
+        for note in self.notes.values():
+            normalized_note = Note(note.base_note, 0, note.semitone)  # Normalize to octave 0
+            normalized_container.add(normalized_note)
+        return normalized_container
+    
+    def fetch(self, position):
+        # Check if the position is within bounds
+        if position < 0 or position >= len(self.notes):
+            raise IndexError("Position out of bounds")
+        # Get the item by index in the ordered dictionary
+        key = list(self.notes.keys())[position]
+        return self.notes[key]
+    
+    def __iter__(self):
+        """Yield each note in the container."""
+        for note in self.notes.values():
+            yield note
+
+class NoteList:
+    def __init__(self):
+        self.notes = []  # Use a list to store notes
+
+    def __getitem__(self, index):
+        # Allows direct indexing access
+        return self.notes[index]
+    
+    def __iter__(self):
+        """Yield each note in the container."""
+        return iter(self.notes)
+
+    def __contains__(self, item):
+        # Check for note existence in the list
+        return any(item == note for note in self.notes)
+
+    def __str__(self):
+        return ''.join(str(note) for note in self.notes)
+
+    def __len__(self):
+        return len(self.notes)  # Return the number of notes in the list
+
+    def add(self, note):
+        self.notes.append(note)  # Append new note to the list
+        
+    def pop(self):
+        # Pop the last item from the list if not empty
+        return self.notes.pop() if self.notes else None
+
+    def normalize(self):
+        """Normalizes all notes to octave 0 and returns a new NoteContainer with these normalized notes."""
+        normalized_container = NoteList()
+        for note in self.notes:
+            normalized_note = Note(note.base_note, 0, note.semitone)  # Normalize to octave 0
+            normalized_container.add(normalized_note)
+        return normalized_container
+    
+    def fetch(self, position):
+        # Return the item by index in the list, raises IndexError if out of bounds
+        return self.notes[position]
+
+    def __getitem__(self, index):
+        # Allows direct indexing access
+        return self.notes[index]
+    
+    def __iter__(self):
+        """Yield each note in the container."""
+        return iter(self.notes)
