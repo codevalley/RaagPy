@@ -1,5 +1,7 @@
 class Note:
     ABS_SCALE = 12
+    SYMBOL = " "
+    SYMBOL_INDEX = 999999  # Just a really large number
     NOTES = 'SRGMPDN'  # Valid notes in order for Indian music notation
     BASE_INDICES = [0, 2, 4, 5, 7, 9, 11]  # Starting indices for each note in a chromatic scale
     INDEX_MAP = {
@@ -18,30 +20,41 @@ class Note:
     }
     def __init__(self, note, octave=0, semitone=0):
 
+        self.symbol = None
+        self.base_note = 0
         if isinstance(note,str):
             if note.upper() in Note.NOTES:
                 self.base_note = Note.NOTES.index(note.upper())  # Convert note letter to an index
             else:
-                raise ValueError("Invalid note, must be one of S, R, G, M, P, D, N ")
+                self.symbol = str
         elif isinstance(note, int):
             self.base_note = note % Note.ABS_SCALE
         else:
-            raise ValueError("Invalid note, must be a one of S, R, G, M, P, D, N  or a number between 0-6")
+            raise ValueError("Must be a string or a number")
         
         self.octave = octave
         self.semitone = semitone  # -1 = flat, 0 = natural, 1 = sharp
         self.index = self.toNumber()
 
     def toNumber(self):
+        if(self.symbol != None):
+            return self.SYMBOL_INDEX
+        
         note_index = Note.BASE_INDICES[self.base_note] + self.semitone
-        total_index = note_index + (self.octave * 12)
+        total_index = note_index + (self.octave * self.ABS_SCALE)
         return total_index
     
     def update(self, note=None, octave=None, semitone=None):
         if note is not None:
-            if not isinstance(note, str) or note.upper() not in Note.NOTES:
-                raise ValueError("Invalid note, must be one of S, R, G, M, P, D, N")
-            self.base_note = note.upper()
+            if isinstance(note,str):
+                if note.upper() in Note.NOTES:
+                    self.base_note = Note.NOTES.index(note.upper())  # Convert note letter to an index
+                else:
+                    self.symbol = str
+            elif isinstance(note, int):
+                self.base_note = note % Note.ABS_SCALE
+            else:
+                raise ValueError("Must be a string or a number")
         if octave is not None:
             self.octave = octave
         if semitone is not None:
@@ -50,14 +63,17 @@ class Note:
 
     @staticmethod
     def fromNumber(index):
+        if index == Note.SYMBOL_INDEX:
+            return Note(Note.SYMBOL, octave, semitone)
         octave, position_in_octave = divmod(index,Note.ABS_SCALE)
         base_note, semitone = Note.INDEX_MAP[position_in_octave]
         return Note(Note.NOTES[base_note], octave, semitone)
 
     def __str__(self):
-        #semitone_symbol = {1: '#', 0: '', -1: 'b'}
-        #return f"{self.base_note}{semitone_symbol[self.semitone]}{' ' + str(self.octave) if self.octave != 0 else ''}"
-        # Convert the integer back to the note character for display
+        
+        if self.symbol != None:
+            return self.SYMBOL
+
         note_char = Note.NOTES[self.base_note]
         if(self.semitone != 0):
             note_char = note_char + "_"
@@ -70,21 +86,36 @@ class Note:
 
     
     def transpose(self,steps):
+        if self.symbol != None:
+            return self
         new_index = self.index + steps
         return Note.fromNumber(new_index)
     
     def compare_base(self, other):
         if isinstance(other, Note):
+            if self.symbol != None:
+                if other.symbol != None: 
+                    # Here we are deliberately ignoring what the symbol string is
+                    # And matching all symbols as same
+                    return True
             return self.base_note == other.base_note
         return False
 
     def compare_note(self, other):
         if isinstance(other, Note):
+            if self.symbol != None:
+                if other.symbol != None: 
+                    # Here we are deliberately ignoring what the symbol string is
+                    # And matching all symbols as same
+                    return True
             return (self.base_note == other.base_note) and (self.semitone == other.semitone)
         return False
 
     def __eq__(self, other):
         if isinstance(other, Note):
+            if self.symbol != None:
+                if other.symbol == self.SYMBOL: 
+                    return True
             return self.index == other.index
         return False
     
@@ -167,7 +198,7 @@ class NoteList:
 
     def add(self, note):
         self.notes.append(note)  # Append new note to the list
-        
+
     def pop(self):
         # Pop the last item from the list if not empty
         return self.notes.pop() if self.notes else None

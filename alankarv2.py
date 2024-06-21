@@ -32,9 +32,6 @@ def parse_pattern(pattern):
     while i < len(pattern):
         char = pattern[i]
         
-        if char.upper() not in Note.NOTES:
-            raise ValueError("Invalid note, must be one of S, R, G, M, P, D, N")
-        
         octave = 0
         if char.islower():  # Lowercase indicates lower octave
             char = char.upper()
