@@ -1,4 +1,3 @@
-from collections import OrderedDict
 class Note:
     ABS_SCALE = 12 #chromatic scale has 12 notes
     SYMBOL = " " #A symbol which is not a note, but can be used as a placeholder
@@ -129,7 +128,7 @@ class Note:
         return NotImplemented
 
     def __hash__(self):
-        return hash(self.index,self.symbol)  # Hash based on the index
+        return hash((self.index,))   # Hash based on the index
     
 
 class NoteContainer:
@@ -140,6 +139,8 @@ class NoteContainer:
         self.notes[note.index] = note
 
     def __contains__(self, item):
+        if isinstance(item, Note):
+            return item.index in self.notes
         return item in self.notes
 
     def __str__(self):
@@ -161,6 +162,7 @@ class NoteContainer:
             yield note
 
 class NoteList:
+
     def __init__(self):
         self.notes = []  # Use a list to store notes
 
@@ -185,9 +187,6 @@ class NoteList:
     def add(self, note):
         self.notes.append(note)  # Append new note to the list
 
-    def pop(self):
-        # Pop the last item from the list if not empty
-        return self.notes.pop() if self.notes else None
 
     def normalize(self):
         """Normalizes all notes to octave 0 and returns a new NoteContainer with these normalized notes."""
@@ -200,11 +199,6 @@ class NoteList:
     def fetch(self, position):
         # Return the item by index in the list, raises IndexError if out of bounds
         return self.notes[position]
-
-    def __getitem__(self, index):
-        # Allows direct indexing access
-        return self.notes[index]
-    
-    def __iter__(self):
-        """Yield each note in the container."""
-        return iter(self.notes)
+    def getLast(self):
+        # Return the last item without removing it, if the list is not empty
+        return self.notes[-1] if self.notes else None

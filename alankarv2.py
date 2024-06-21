@@ -59,7 +59,7 @@ def generate_alankars(scale, pattern, shortloop):
     
         alankars.append(node)
         current_pattern = node
-        if shortloop == True and node[len(node)-1].base_note == 0:
+        if shortloop == True and node[-1].base_note == 0:
             break;
         if shortloop == False and str(node.normalize()) == str(pattern.normalize()):
             break;
