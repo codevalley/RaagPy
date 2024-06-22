@@ -1,9 +1,12 @@
+from collections import OrderedDict
 class Note:
     ABS_SCALE = 12 #chromatic scale has 12 notes
     SYMBOL = " " #A symbol which is not a note, but can be used as a placeholder
     SYMBOL_INDEX = 999999  #Just a really large number, for a non-note placeholder
     NOTES = 'SRGMPDN'  # Valid notes in order for Indian music notation
     BASE_INDICES = [0, 2, 4, 5, 7, 9, 11]  # Starting indices for each note in a chromatic scale
+    monospace = True
+    LENGTH = 2
     INDEX_MAP = {
         0: (0, 0),  # S natural
         1: (1, -1), # R flat
@@ -39,6 +42,8 @@ class Note:
         self.semitone = semitone  # -1 = flat, 0 = natural, 1 = sharp
         self.index = self.toNumber()
 
+    def set_monospace(flag):
+        self.monospace = flag
 
     def update(self, note=None, octave=None, semitone=None):
         if note is not None:
@@ -61,7 +66,10 @@ class Note:
 
         self.index = self.toNumber()  # Recalculate index after updates
 
-    
+    def is_note(self):
+        if self.symbol == None:
+            return True
+        return False
     def transpose(self,steps):
         if self.symbol != None:
             return self
@@ -102,19 +110,19 @@ class Note:
     #overloaded internal methods
 
     def __str__(self):
+        result = ""
         if self.symbol != None:
-            return self.symbol
-
-        note_char = Note.NOTES[self.base_note]
-        if(self.semitone != 0):
-            note_char = note_char + "_"
-        if self.octave == 0:
-            return note_char
-        elif self.octave == -1:
-            return note_char.lower()
-        elif self.octave == 1:
-            return note_char + "'"
-        
+            result = self.symbol
+        else :
+            result = Note.NOTES[self.base_note]
+            if(self.semitone != 0):
+                result = result + "_"
+            
+            if self.octave == -1:
+                result = result.lower()
+            elif self.octave == 1:
+                result = result + "'"
+        return result.ljust(self.LENGTH)
     def __eq__(self, other):
         if isinstance(other, Note):
             if self.symbol is not None and other.symbol == self.symbol:
@@ -138,6 +146,12 @@ class NoteContainer:
     def add(self, note):
         self.notes[note.index] = note
 
+    def index(self, note):
+        for idx, stored_note in enumerate(self.notes):
+            if stored_note == note:
+                return idx
+        raise ValueError("Note not found in the container")
+    
     def __contains__(self, item):
         if isinstance(item, Note):
             return item.index in self.notes
@@ -187,7 +201,12 @@ class NoteList:
     def add(self, note):
         self.notes.append(note)  # Append new note to the list
 
-
+    def index(self, note):
+        for idx, stored_note in enumerate(self.notes):
+            if note.compare_base(stored_note):
+                return idx
+        raise ValueError("Note not found in the list")
+    
     def normalize(self):
         """Normalizes all notes to octave 0 and returns a new NoteContainer with these normalized notes."""
         normalized_container = NoteList()

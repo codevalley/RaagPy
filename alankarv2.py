@@ -1,5 +1,5 @@
 import argparse
-from swaram import Note, NoteContainer, NoteList
+from swaram import Note, NoteList
 import sys
 
 def note_travel(scale, note, increment):
@@ -16,13 +16,14 @@ def note_travel(scale, note, increment):
         
 def parse_scale(scale):
     """ Parses the given scale into a NoteContainer, assuming no semitones and octave 0. """
-    container = NoteContainer()
+    container = NoteList()
     ## Validate notes to be valid characters
     for char in scale:
         if char.upper() not in Note.NOTES:
             raise ValueError("Invalid note, must be one of S, R, G, M, P, D, N")
         note = Note(char.upper(), 0, 0)  # Normalize all to octave 0, semitone 0
-        container.add(note)
+        if note not in container :
+            container.add(note)
     return container
 
 def parse_pattern(pattern):
@@ -46,16 +47,45 @@ def parse_pattern(pattern):
         i += 1
     return notes
 
+def get_descending_seed(scale, pattern):
+    descending_seed = NoteList()
+    base_index = scale.index(Note('S', 0, 0))  # Find index of 'S' in the scale
 
-def generate_alankars(scale, pattern, shortloop):
+    for note in pattern:
+        #leave non-note objects as it is
+        if not note.is_note():
+            descending_seed.add(note)
+            continue
+        # special handling for 'S'
+        if note.base_note == 0:
+            #add S on the next octave
+            descending_seed.add(Note(note.base_note, note.octave+1, note.semitone))
+            continue
+
+        note_index = scale.index(note)  # Find index of the current note in the scale
+        delta = note_index - base_index  # Difference from 'S'
+        
+        # Find the corresponding note in the scale by moving backwards from 'S'
+        reverse_index = base_index - delta
+        reverse_note = scale[reverse_index % len(scale)]  # Handle wrap-around using modulo
+
+        
+        #since the octave is normalized in the process, we have to mirror it from the original note
+        descending_seed.add(Note(reverse_note.base_note, -reverse_note.octave, reverse_note.semitone))
+
+    return descending_seed
+
+
+def generate_alankars(scale, pattern, shortloop,increment=1):
     """ Generates alankars by shifting each note in the pattern to the next in the scale. """
     alankars = []
     current_pattern = pattern
     alankars.append(current_pattern)
+    
     while True:
         node = NoteList()
         for note in current_pattern:
-            node.add(note_travel(scale,note,1))
+            node.add(note_travel(scale,note,increment))
     
         alankars.append(node)
         current_pattern = node
@@ -87,6 +117,10 @@ def main():
     for alankar in alankars:
         print(''.join(str(note) for note in alankar))
     
-
+    print("--------------")
+    alankars = generate_alankars(scale_container, get_descending_seed(scale_container,pattern_notes), shortloop,-1)
+    for alankar in alankars:
+        print(''.join(str(note) for note in alankar))
+    
 if __name__ == "__main__":
     main()
