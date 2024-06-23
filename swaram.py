@@ -5,8 +5,12 @@ class Note:
     SYMBOL_INDEX = 999999  #Just a really large number, for a non-note placeholder
     NOTES = 'SRGMPDN'  # Valid notes in order for Indian music notation
     BASE_INDICES = [0, 2, 4, 5, 7, 9, 11]  # Starting indices for each note in a chromatic scale
+
+    #string conversion preferences
     monospace = True
-    LENGTH = 2
+    note_length = 2
+    show_semitone = False
+    
     INDEX_MAP = {
         0: (0, 0),  # S natural
         1: (1, -1), # R flat
@@ -98,6 +102,11 @@ class Note:
         total_index = note_index + (self.octave * self.ABS_SCALE)
         return total_index
     
+    def beautify(length, monospace, semitone):
+        self.LENGTH = length
+        self.monospace = monospace
+        self.show_semitone = semitone
+
     @staticmethod
     def fromNumber(index):
         if index == Note.SYMBOL_INDEX:
@@ -122,7 +131,7 @@ class Note:
                 result = result.lower()
             elif self.octave == 1:
                 result = result + "'"
-        return result.ljust(self.LENGTH)
+        return result.ljust(self.note_length)
     def __eq__(self, other):
         if isinstance(other, Note):
             if self.symbol is not None and other.symbol == self.symbol:
